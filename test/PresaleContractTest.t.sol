@@ -81,7 +81,9 @@ contract PresaleContractTest is Test {
         
     }
 
-    //test de la funcion buyTokens
+    // Test que verifica la compra de tokens con USDC
+    // Comprueba que los balances de USDC y tokens se actualizan correctamente
+    // y que los fondos se transfieren al tesoro como se espera
     function testBuyTokens() public {
         uint256 initialUserUsdcBalance = usdcContract.balanceOf(user1);
         uint256 initialUserTokenBalance = tokenSaleContract.balanceOf(user1);
@@ -116,6 +118,9 @@ contract PresaleContractTest is Test {
         assertEq(finalTreasuryUsdcBalance, initialTreasuryUsdcBalance + value, "El tesoro no recibio la cantidad correcta de USDC");
     }
 
+    // Test que verifica la compra de tokens con CHZ nativo
+    // Comprueba la conversion correcta de CHZ a USDC y la transferencia adecuada de tokens
+    // Valida que los balances se actualicen correctamente en todas las cuentas
     function testBuyTokensWithCHZ() public {
         uint256 value = 3351760000000000000000;
         uint256 initialUserChzBalance = address(user1).balance;
@@ -151,6 +156,9 @@ contract PresaleContractTest is Test {
         assertEq(finalTreasuryUsdcBalance, initialTreasuryUsdcBalance + usdcAmount, "El tesoro no recibio la cantidad correcta de USDC");
     }
 
+    // Test que compara la compra de tokens usando CHZ y USDC con el mismo valor equivalente
+    // Verifica que ambos metodos de compra producen resultados similares en terminos de tokens recibidos
+    // y fondos enviados al tesoro, con un margen de error aceptable
     function testCompararComprasConMismoValor() public {
         uint256 chzAmount = 30000000000000000000000;
         
@@ -241,6 +249,9 @@ contract PresaleContractTest is Test {
 
     // ==================== Tests de funcionalidades de emergencia y finalización ====================
 
+    // Test que verifica la funcionalidad de pausa del contrato
+    // Comprueba que cuando el contrato esta pausado no se pueden realizar compras
+    // y que cuando se despausa, las compras vuelven a funcionar correctamente
     function testPauseContract() public {
         vm.startPrank(address(this));
         bool isPaused = false;
@@ -279,6 +290,9 @@ contract PresaleContractTest is Test {
         assertTrue(isUnpaused, "El contrato deberia estar despausado y permitir compras");
     }
 
+    // Test que verifica la funcionalidad de retiro de emergencia de tokens
+    // Comprueba que el propietario puede retirar tokens del contrato en caso de emergencia
+    // y que los balances se actualizan correctamente despues del retiro
     function testEmergencyWithdrawTokens() public {
         vm.prank(presaleContract.owner());
         presaleContract.pauseContract();
@@ -304,6 +318,9 @@ contract PresaleContractTest is Test {
         assertEq(finalOwnerBalance, initialOwnerBalance + emergencyAmount, "El balance del owner deberia aumentar");
     }
 
+    // Test que verifica el comportamiento cuando se alcanza el limite maximo de recaudacion (hardcap)
+    // Comprueba que la preventa se marca como finalizada y que no se permiten mas compras
+    // despues de alcanzar el hardcap establecido
     function testHardCapReached() public {
         uint256 hardcap = presaleContract.stableCoinHardCap();
         uint256 tokenPrice = presaleContract.tokenPriceInUsdc();
@@ -351,6 +368,9 @@ contract PresaleContractTest is Test {
         assertTrue(presaleContract.isPresaleEnded(), "La preventa deberia considerarse finalizada al alcanzar el hardcap");
     }
 
+    // Test que verifica el comportamiento cuando se alcanza el tiempo limite de la preventa
+    // Comprueba que la preventa se marca como finalizada y que no se permiten mas compras
+    // despues de que el tiempo de la preventa ha expirado
     function testPresaleEndTime() public {
         assertFalse(presaleContract.isPresaleEnded(), "La preventa no deberia estar finalizada inicialmente");
 
@@ -371,6 +391,9 @@ contract PresaleContractTest is Test {
         assertTrue(purchaseFailed, "La compra deberia fallar cuando la preventa ha finalizado");
     }
 
+    // Test que verifica la recuperacion de tokens no vendidos al finalizar la preventa
+    // Comprueba que el propietario puede recuperar los tokens que no se vendieron
+    // y que los balances se actualizan correctamente despues de la recuperacion
     function testRecoverUnsoldTokens() public {
         uint256 endTime = presaleContract.saleEndTime();
         vm.warp(endTime + 1 hours);
@@ -405,6 +428,9 @@ contract PresaleContractTest is Test {
         assertEq(presaleContract.totalTokensForSale(), 0, "El total de tokens para venta deberia ser 0 despues de recuperar");
     }
 
+    // Test que verifica la recuperacion de tokens ERC20 enviados al contrato
+    // Comprueba que el propietario puede recuperar tokens ERC20 que fueron enviados
+    // accidentalmente al contrato de preventa
     function testRecoverERC20() public {
         TokenSale testToken = new TokenSale("Test Token", "TST");
         testToken.mint(address(this), 1000 * 10**18);
