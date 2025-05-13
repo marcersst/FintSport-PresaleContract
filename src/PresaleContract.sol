@@ -248,6 +248,25 @@ contract PresaleContract is Ownable(msg.sender), Pausable, ReentrancyGuard {
     }
 
     // ==================== Funciones de consulta ====================
+
+     /**
+     * @notice Funcion para obtener la cantidad a pagar por una cantidad de tokens
+     * @param amount Cantidad de tokens a comprar
+     * @return amountToPayStableCoin y amountToPayCHZ Cantidad a pagar
+     */
+    function calculateAmountToPay(uint256 amount) public view returns (uint256 amountToPayStableCoin, uint256 amountToPayCHZ) {
+       require(amount > 0, "amount must be more than 0");
+
+       amountToPayStableCoin = (amount * tokenPriceInUsdc) / 1e18;
+
+        address[] memory path = new address[](2);
+        path[0] = address(wCHZ);
+        path[1] = address(usdcContract);
+        uint256[] memory amounts = kayenRouter.getAmountsIn(amountToPayStableCoin, path);
+        amountToPayCHZ = amounts[0];
+        return (amountToPayStableCoin, amountToPayCHZ);
+
+    }
    
     function getUserInfo(address user) external view returns (uint256, uint256, uint256, uint256) {
         return (
