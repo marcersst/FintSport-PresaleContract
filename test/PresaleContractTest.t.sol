@@ -454,4 +454,99 @@ contract PresaleContractTest is Test {
         assertEq(finalContractBalance, 0, "El balance del contrato deberia ser 0");
         assertEq(finalOwnerBalance, initialOwnerBalance + initialContractBalance, "El balance del owner deberia aumentar");
     }
+
+    // Test que verifica la funcion calculateAmountToPay y compara sus resultados con compras reales
+    // Comprueba que los calculos de la función coinciden con los valores reales utilizados en las transacciones
+    function testCalculateAmountToPay() public {
+        // Tokens a comprar
+        uint256 tokenAmount = 500 * 10**18; // 500 tokens
+        
+        // Obtener los calculos de la función calculateAmountToPay
+        (uint256 calculatedStableCoinAmount, uint256 calculatedChzAmount) = presaleContract.calculateAmountToPay(tokenAmount);
+        
+        console.log("=== TEST CALCULATE AMOUNT TO PAY ===");
+        console.log("Cantidad de tokens a comprar:", tokenAmount);
+        console.log("Cantidad calculada de stablecoin a pagar:", calculatedStableCoinAmount);
+        console.log("Cantidad calculada de CHZ a pagar:", calculatedChzAmount);
+        
+        // Verificar compra con stablecoin
+        uint256 initialUserUsdcBalance = usdcContract.balanceOf(user1);
+        uint256 initialUserTokenBalance = tokenSaleContract.balanceOf(user1);
+        uint256 initialTreasuryUsdcBalance = usdcContract.balanceOf(treasury);
+        
+        vm.startPrank(user1);
+        usdcContract.approve(address(presaleContract), calculatedStableCoinAmount);
+        presaleContract.purchaseTokensWithStablecoin(tokenAmount, true);
+        vm.stopPrank();
+        
+        uint256 finalUserUsdcBalance = usdcContract.balanceOf(user1);
+        uint256 finalUserTokenBalance = tokenSaleContract.balanceOf(user1);
+        uint256 finalTreasuryUsdcBalance = usdcContract.balanceOf(treasury);
+        
+        uint256 actualUsdcPaid = initialUserUsdcBalance - finalUserUsdcBalance;
+        uint256 actualTokensReceived = finalUserTokenBalance - initialUserTokenBalance;
+        uint256 actualTreasuryReceived = finalTreasuryUsdcBalance - initialTreasuryUsdcBalance;
+        
+        console.log("\n=== RESULTADOS COMPRA CON STABLECOIN ===");
+        console.log("USDC calculado a pagar:", calculatedStableCoinAmount);
+        console.log("USDC realmente pagado:", actualUsdcPaid);
+        console.log("Tokens recibidos:", actualTokensReceived);
+        console.log("USDC recibido por el tesoro:", actualTreasuryReceived);
+        
+        assertEq(actualUsdcPaid, calculatedStableCoinAmount, "El USDC pagado debe coincidir con el calculado");
+        assertEq(actualTokensReceived, tokenAmount, "Los tokens recibidos deben coincidir con la cantidad solicitada");
+        assertEq(actualTreasuryReceived, calculatedStableCoinAmount, "El tesoro debe recibir la cantidad calculada de USDC");
+        
+        // Verificar compra con CHZ
+        uint256 initialUserChzBalance = address(user2).balance;
+        uint256 initialUser2TokenBalance = tokenSaleContract.balanceOf(user2);
+        
+        // Obtener la cantidad de tokens que se recibiran con la cantidad calculada de CHZ
+        (uint256 usdcEquivalent, uint256 tokensToReceive) = presaleContract.calculateTokensForChz(calculatedChzAmount);
+        
+        console.log("\n=== VERIFICACION COMPRA CON CHZ ===");
+        console.log("CHZ calculado a pagar:", calculatedChzAmount);
+        console.log("USDC equivalente para el CHZ calculado:", usdcEquivalent);
+        console.log("Tokens esperados con el CHZ calculado:", tokensToReceive);
+        
+        vm.startPrank(user2);
+        presaleContract.purchaseTokens{value: calculatedChzAmount}();
+        vm.stopPrank();
+        
+        uint256 finalUserChzBalance = address(user2).balance;
+        uint256 finalUser2TokenBalance = tokenSaleContract.balanceOf(user2);
+        
+        uint256 actualChzPaid = initialUserChzBalance - finalUserChzBalance;
+        uint256 actualTokensFromChz = finalUser2TokenBalance - initialUser2TokenBalance;
+        
+        console.log("CHZ realmente pagado:", actualChzPaid);
+        console.log("Tokens realmente recibidos con CHZ:", actualTokensFromChz);
+        
+        assertEq(actualChzPaid, calculatedChzAmount, "El CHZ pagado debe coincidir con el calculado");
+        
+        // Verificar que los tokens recibidos con CHZ son aproximadamente iguales a los solicitados con un 2% de margen
+        assertApproxEqRel(
+            actualTokensFromChz,
+            tokenAmount,
+            0.02e18, // 2% de margen
+            "Los tokens recibidos con CHZ deben ser aproximadamente iguales a los solicitados"
+        );
+        
+        // Comparar ambos metodos de compra
+        console.log("\n=== COMPARACION DE METODOS DE COMPRA ===");
+        console.log("Tokens comprados con stablecoin:", actualTokensReceived);
+        console.log("Tokens comprados con CHZ:", actualTokensFromChz);
+        console.log("USDC pagado:", calculatedStableCoinAmount);
+        console.log("CHZ pagado:", calculatedChzAmount);
+        console.log("USDC equivalente del CHZ pagado:", usdcEquivalent);
+        
+       
+        assertApproxEqRel(
+            usdcEquivalent,
+            calculatedStableCoinAmount,
+            0.02e18, // 2% de tolerancia
+            "El USDC equivalente del CHZ debe ser aproximadamente igual al USDC calculado"
+        );
+    }
+    }
 }
