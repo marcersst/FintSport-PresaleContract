@@ -1,8 +1,7 @@
-# DiviSwapContract
 
 ## Descripción
 
-Este es  un proyecto de contratos  para la plataforma Diviswap, incluye un contrato de preventa que permite a los usuarios comprar tokens utilizando stablecoins (USDC/USDT) o CHZ nativo. El proyecto está construido utilizando Foundry, un toolkit modular para el desarrollo de aplicaciones Ethereum.
+Este es  un proyecto de contratos  para la plataforma FintSport, incluye un contrato de preventa que permite a los usuarios comprar tokens utilizando stablecoins (USDC/USDT) o CHZ nativo. El proyecto está construido utilizando Foundry, un toolkit modular para el desarrollo de aplicaciones Ethereum.
 
 ## Características Principales
 
